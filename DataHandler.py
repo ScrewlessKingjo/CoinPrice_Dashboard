@@ -1,4 +1,3 @@
-
 import datetime
 import requests
 import json
@@ -11,7 +10,7 @@ URL_DICT = {
 'ticker': 'https://api.bithumb.com/public/ticker/ALL_KRW',
 'orderbook': 'https://api.bithumb.com/public/orderbook/ALL_KRW'}
 HEADERS = {"accept": "application/json"}
-KEY_LIST = ['BTC', 'ETC', 'XRP', 'BCH', 'QTUM', 'BTG', 'ICX', 'TRX']
+KEY_LIST = ['BTC', 'ETC', 'XRP', 'BCH', 'QTUM', 'BTG']
 
 
 rd = redis.StrictRedis(host='localhost', port=6379, db=0)
@@ -94,6 +93,7 @@ def DataLoader(rd, data_count, KEY_LIST):
 
     return df_dict
 
+
 def ChartDataFilter(df):
     
     columns_keep = ['min_price', 'max_price', 'bids', 'asks']
@@ -104,7 +104,16 @@ def ChartDataFilter(df):
     return df_filtered[::-1]
 
 
+def TableDataFilter(df_dict) : 
+    index = ['시가', '종가', '저가', '고가', '거래량', '거래금액', '전일종가', '최근 1일 거래량', '최근 1일 거래금액', '최근 1일 변동가', '최근 1일 변동률', '최신 매수가', '최신 매도가']
+    for coin in df_dict.keys():
+        df = pd.DataFrame(df_dict[coin])
+        df.index= index
+
+    return df
+
+
 if __name__ == "__main__":
     for i in range(100) :
-        DataCollector(URL_DICT, HEADERS, KEY_LIST, rd)
-        time.sleep(5)
+       DataCollector(URL_DICT, HEADERS, KEY_LIST, rd)
+       time.sleep(5)
