@@ -1,6 +1,8 @@
+
+import datetime
 import requests
 import json
-import datetime
+import time
 import numpy as np
 import pandas as pd
 import redis
@@ -14,9 +16,9 @@ KEY_LIST = ['BTC', 'ETC', 'XRP', 'BCH', 'QTUM', 'BTG', 'ICX', 'TRX']
 
 rd = redis.StrictRedis(host='localhost', port=6379, db=0)
 
-def OrderbookDataCollector(url, headers,key_list, rd):
+def OrderbookDataCollector(url, headers,key_list):
     result_dict = {}
-    response = requests.get(url, headers=HEADERS)
+    response = requests.get(url, headers=headers)
     data = json.loads(response.text)['data']
 
     for key in key_list :
@@ -29,8 +31,8 @@ def OrderbookDataCollector(url, headers,key_list, rd):
         for count in data[key]['asks']:
             asks_list.append(float(count['price']))
             
-        result_dict[key] = {'bids' : np.round(sum(bid_list)/len(bid_list), 2),
-            'asks' : np.round(sum(asks_list)/len(asks_list), 2)}      
+        result_dict[key] = {'bids' : int(np.round(sum(bid_list)/len(bid_list), 0)),
+            'asks' : int(np.round(sum(asks_list)/len(asks_list), 0))}      
         
     
     return result_dict
@@ -48,7 +50,7 @@ def DataCollector(url, headers,key_list, rd) :
         result_dict[key] = data[key]
 
 
-    orderbook_data = OrderbookDataCollector(url['orderbook'], headers, key_list, rd)
+    orderbook_data = OrderbookDataCollector(url['orderbook'], headers, key_list)
     
     combined_dict = {
         currency: {
@@ -66,21 +68,43 @@ def DataCollector(url, headers,key_list, rd) :
 def GetLatestData(redis_client, count):
     keys = redis_client.keys()
     sorted_keys = sorted(keys, reverse=True)  
-    latest_data = []
-    
+    temp_dict = {}
     for key in sorted_keys[:count]:
         value = redis_client.get(key)
-        latest_data.append({key.decode(): value.decode()})
+        temp_dict[key.decode()] = json.loads(value.decode())
     
-    return latest_data
+    return temp_dict
 
 
-def DataFrameGenerator(result, coin) : 
-    df_list = []
-    for dict_key in result.keys() :
-        df_list.append(result[dict_key][coin])
-    df=pd.DataFrame(df_list, index=result.keys())
-    return df
+def DataFrameGenerator(result, key_list):
+    result_dict = {}
+
+    for coin in key_list:
+        df_list = []
+        for dict_key in result.keys():
+            df_list.append(result[dict_key][coin])
+        df = pd.DataFrame(df_list, index=result.keys())
+        result_dict[coin] = df
+
+    return result_dict
+
+def DataLoader(rd, data_count, KEY_LIST):
+    data_list = GetLatestData(rd, data_count)
+    df_dict = DataFrameGenerator(data_list, KEY_LIST)
+
+    return df_dict
+
+def ChartDataFilter(df):
+    
+    columns_keep = ['min_price', 'max_price', 'bids', 'asks']
+    columns_drop = [col for col in df.columns if col not in columns_keep]
+    
+    df_filtered = df.drop(columns_drop, axis=1)
+    
+    return df_filtered[::-1]
 
 
-# DataCollector(URL_DICT, HEADERS, KEY_LIST, rd)
+if __name__ == "__main__":
+    for i in range(100) :
+        DataCollector(URL_DICT, HEADERS, KEY_LIST, rd)
+        time.sleep(5)
