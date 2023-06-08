@@ -51,7 +51,8 @@ python -m streamlit run main.py
 
 ## Layout
 
-![image](https://github.com/ScrewlessKingjo/Redis_Project/assets/92324214/7d4d2ee2-04d6-4c37-b738-164a1f0be0cc)
+![image](https://github.com/ScrewlessKingjo/CoinPrice_Dashboard/assets/92324214/e5ce2145-09e3-40d8-97cd-00265061b8ee)
+
 
 - 웹 애플리케이션은 가상화폐 시세 추이를 실시간으로 업데이트하여 보여줍니다.
 - 각 가상화폐의 현재가 정보에 대한 테이블을 볼 수 있습니다.
